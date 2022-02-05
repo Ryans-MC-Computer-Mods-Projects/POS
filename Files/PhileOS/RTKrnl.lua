@@ -13,6 +13,21 @@ end
 
 local clipboard = ""
 
+--Old CC:T Version Support
+if not colors.toBlit then
+	local color_hex_lookup = {}
+	for i = 0, 15 do
+    	color_hex_lookup[2 ^ i] = string.format("%x", i)
+	end
+	function toBlit(color)
+		expect(1, color, "number")
+		return color_hex_lookup[color] or
+			string.format("%x", math.floor(math.log(color) / math.log(2)))
+	end
+	colors.toBlit = toBlit
+	colours.toBlit = toBlit
+end
+
 --Tables for processes and order to run coroutines and render
 local processes = {}
 local renderOrder = {}
