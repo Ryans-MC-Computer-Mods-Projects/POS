@@ -16,6 +16,8 @@
   "/PhileOS/Icons/Programs/PhileOS/Programs/Settings.lua.phimg",
   "/PhileOS/Icons/Programs/PhileOS/Programs/Trash.lua.phico",
   "/PhileOS/Icons/Programs/PhileOS/explorer.lua.phico",
+  "/PhileOS/Icons/Programs/rom/programs/lua.lua.phico",
+  "/PhileOS/Icons/Programs/rom/programs/shell.lua.phico",
   "/PhileOS/Programs/Calculator.lua",
   "/PhileOS/Programs/Notepad.lua",
   "/PhileOS/Programs/Paint.lua",
