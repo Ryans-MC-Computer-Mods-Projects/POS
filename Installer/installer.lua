@@ -81,6 +81,7 @@ while true do
                 varTable = {toPrint = {"Downloading Files..."}}
                 PhileOS.setStatus(PhileOS.ID, 1)
             elseif e[3] >= math.ceil(Sx / 2) + 1 and e[3] <= math.ceil(Sx / 2) + 6 and e[4] >= Sy - 2 then
+		fs.delete("temp/")
                 PhileOS.stopAll(PhileOS.ID)
             end
         end
