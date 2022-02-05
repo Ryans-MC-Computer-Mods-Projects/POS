@@ -61,6 +61,9 @@ while true do
 	term.setBackgroundColour(1)
 	term.setTextColour(32768)
 	local hour = PhileOS.FormatTime("%I")
+	if #hour == 1 then
+		hour = "0"..hour
+	end
 	term.write(hour..PhileOS.FormatTime("%p"):sub(1, 1))
 	term.setCursorPos(1, Sy)
 	term.write(PhileOS.FormatTime("%MM"))
