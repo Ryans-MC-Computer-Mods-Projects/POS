@@ -23,4 +23,4 @@ local fh = fs.open("/temp/installer.lua", "w")
 fh.write(installer.readAll())
 fh.close()
 
-shell.run("/Temp/RTKrnl")
+shell.run("/temp/RTKrnl")
