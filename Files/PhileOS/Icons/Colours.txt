@@ -1,0 +1,16 @@
+whi White
+ora Orange
+mag Magenta
+lbl LightBlue
+yel Yellow
+lim Lime
+pin Pink
+gry Grey
+lgr LightGrey
+cya Cyan
+pur Purple
+blu Blue
+bro Brown
+red Red
+bla Black
+tra Transparent

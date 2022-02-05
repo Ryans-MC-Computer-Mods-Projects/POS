@@ -1,0 +1,32 @@
+{
+  openWith = {
+    txt = "PhileOS/Programs/Notepad.lua",
+    lua = "rom/execute",
+    set = "PhileOS/Programs/Notepad.lua",
+    phico = "PhileOS/Programs/Notepad.lua",
+    Folder = "PhileOS/explorer.lua",
+    phimg = "PhileOS/Programs/Phile Paint.lua",
+  },
+  theme = {
+    desktopTextColour = 1,
+    taskbarBGColour = 1,
+    defDeselTextColour = 256,
+    taskbarShownWinIconColour = 8,
+    defBackgroundColour = 1,
+    defSelBGColour = 256,
+    taskbarTextColour = 32768,
+    defTextColour = 32768,
+    backgroundColour = 512,
+    selWindowTextColour = 1,
+    windowTextColour = 128,
+    windowColour = 256,
+    selBackgroundColour = 8,
+    defSelTextColour = 32768,
+    selTitleBarColour = 128,
+  },
+  time = {
+    autoDST = true,
+    autoTime = true,
+    timezone = 0,
+  },
+}
