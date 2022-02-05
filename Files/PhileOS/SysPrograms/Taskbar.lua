@@ -44,6 +44,9 @@ while true do
 	term.setBackgroundColour(PhileOS.getSetting("theme", "taskbarBGColour"))
 	term.setTextColour(PhileOS.getSetting("theme", "taskbarTextColour"))
 	local hour = PhileOS.FormatTime("%I")
+	if #hour == 1 then
+		hour = "0"..hour
+	end
 	--if tonumber(hour) < 10 then hour = "0"..hour end
 	term.write(hour..PhileOS.FormatTime("%p"):sub(1, 1))
 	term.setCursorPos(1, Sy)
