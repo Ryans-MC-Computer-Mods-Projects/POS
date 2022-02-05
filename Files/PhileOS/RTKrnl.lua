@@ -20,7 +20,11 @@ if not colors.toBlit then
     	color_hex_lookup[2 ^ i] = string.format("%x", i)
 	end
 	function toBlit(color)
-		expect(1, color, "number")
+		local error = true
+		for i, v in pairs(colours) do
+			if color == v then errror = false end
+		end
+		if error then error("Not a valid colour!") end
 		return color_hex_lookup[color] or
 			string.format("%x", math.floor(math.log(color) / math.log(2)))
 	end
