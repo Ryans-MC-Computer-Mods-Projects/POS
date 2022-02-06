@@ -115,7 +115,7 @@ while true do
             fh.write("{}")
             fh.close()
         end
-        e = table.pack(os.pullEventRaw())
+        --e = table.pack(os.pullEventRaw())
     elseif screen == 3 then
         local textLen = middlePrint("Current system time:\n"..PhileOS.FormatTime("%a %b %d %Y %I:%M:%S %p"), 1)
         local half = " "
