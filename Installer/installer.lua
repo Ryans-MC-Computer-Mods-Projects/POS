@@ -93,14 +93,14 @@ while true do
             print(v)
         end
         if not varTable.files then
-            local files = http.get("https://raw.githubusercontent.com/Ryan-CC-Projects/POS/main/files.set")
+            local files = http.get("https://raw.githubusercontent.com/Ryans-MC-Computer-Mods-Projects/POS/main/files.set")
             varTable.files = textutils.unserialise(files.readAll())
         end
         local files = varTable.files
         if #files > 0 then
             local mode = "w"
             if files[1]:sub(-6) == ".phimg" then mode = "wb" end
-            local file = http.get("https://raw.githubusercontent.com/Ryan-CC-Projects/POS/main/Files/"..files[1], nil, mode == "wb")
+            local file = http.get("https://raw.githubusercontent.com/Ryans-MC-Computer-Mods-Projects/POS/main/Files/"..files[1], nil, mode == "wb")
             local fh = fs.open(files[1], mode)
             fh.write(file.readAll())
             fh.close()
