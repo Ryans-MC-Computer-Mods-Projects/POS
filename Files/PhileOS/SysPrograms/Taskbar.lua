@@ -3,7 +3,11 @@ local Phicon = require("Phicon")
 
 local function cut(str,len,pad)
   pad = pad or " "
-  return str:sub(1,len) .. pad:rep(len - #str)
+  if len > #str then
+	return str:sub(1,len) .. pad:rep(len - #str)
+  else
+  	return str:sub(1,len)
+  end
 end
 local click = 0
 local Sx, Sy = term.getSize()
@@ -44,9 +48,6 @@ while true do
 	term.setBackgroundColour(PhileOS.getSetting("theme", "taskbarBGColour"))
 	term.setTextColour(PhileOS.getSetting("theme", "taskbarTextColour"))
 	local hour = PhileOS.FormatTime("%I")
-	if #hour == 1 then
-		hour = "0"..hour
-	end
 	--if tonumber(hour) < 10 then hour = "0"..hour end
 	term.write(hour..PhileOS.FormatTime("%p"):sub(1, 1))
 	term.setCursorPos(1, Sy)
@@ -80,10 +81,15 @@ while true do
 					table.insert(pinnames, i, fs.getName(v))
 				end
 				local option = nil
+				local ets = "Exit To Shell"
+				local usertype = PhileOS.getUserType()
+				if usertype ~= "Admin" and usertype ~= "No Users" then
+					ets = nil
+				end
 				if #pins == 0 then
-					option = PhileOS.openRClick(PhileOS.ID, 4, 1, {"Explorer", "Lock", "Shutdown", "Reboot", "Exit To Shell"})
+					option = PhileOS.openRClick(PhileOS.ID, 4, 1, {"Explorer", "Lock", "Shutdown", "Reboot", ets})
 				else
-					local smt = {"", "Remove Pin", "", "Explorer", "Lock", "Shutdown", "Reboot", "Exit To Shell"}
+					local smt = {"", "Remove Pin", "", "Explorer", "Lock", "Shutdown", "Reboot", ets}
 					for i, v in pairs(pinnames) do
 						table.insert(smt, i, v)
 					end
@@ -104,10 +110,10 @@ while true do
 					for i, v in pairs(pinnames) do
 						if ppr == v then
 							table.remove(pins, i)
+							table.remove(pinnames, i)
 							local file = fs.open("/PhileOS/Settings/start.set", "w")
 							file.write(textutils.serialise(pins))
 							file.close()
-							break
 						end
 					end
 				else

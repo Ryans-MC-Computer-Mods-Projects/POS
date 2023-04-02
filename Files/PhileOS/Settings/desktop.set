@@ -16,6 +16,10 @@
       "Settings",
       "/PhileOS/Programs/Settings.lua",
     },
+    {
+      "Changelog",
+      "/PhileOS/Changelog.txt",
+    },
   },
   {
     {

@@ -197,7 +197,7 @@ while true do
     if e[1] == "term_resize" then
         Sx, Sy = term.getSize()
         if currentlyEditing then
-            PhileOS.setName(PhileOS.ID, "Notepad - "..(currentlyEditing..saved):sub(math.max(#currentlyEditing - (Sx - 19), 1)))
+            PhileOS.setName(PhileOS.ID, "Paint - "..(currentlyEditing..saved):sub(math.max(#currentlyEditing - (Sx - 19), 1)))
         end
         while Sx < 27 or Sy < 15 do
             term.setCursorBlink(false)

@@ -37,7 +37,7 @@ local Col = 1
 
 --Functions
 
-function TextToTable(Text)
+local function TextToTable(Text)
     local ret = {}
     while true do
         local nl = string.find(Text, "\n")
@@ -50,7 +50,7 @@ function TextToTable(Text)
     return ret
 end
 
-function TableToText(Table)
+local function TableToText(Table)
     local ret = ""
     for i, v in pairs(Table) do
         ret = ret..v
@@ -140,6 +140,10 @@ while true do
         textTable[Ln] = textTable[Ln]:sub(1, Col - 1)..e[2]..textTable[Ln]:sub(Col)
         text = TableToText(textTable)
         Col = Col + 1
+    elseif e[1] == "paste" then
+        textTable[Ln] = textTable[Ln]:sub(1, Col - 1)..e[2]..textTable[Ln]:sub(Col)
+        text = TableToText(textTable)
+        Col = Col + #e[2]
     elseif e[1] == "mouse_click" then
         if e[2] == 1 then --Left Click
             if e[4] == 1 then -- Menu bar
@@ -202,7 +206,7 @@ while true do
                         end
                     end
                 elseif option == "About" then
-                    PhileOS.openDialog(PhileOS.ID, "button", {"Phile OS Notepad\nMade by Ryan in 2021", "Ok", "", "", ""})
+                    PhileOS.openDialog(PhileOS.ID, "button", {"Phile OS Notepad\nMade by Ryan in 2023", "Ok", "", "", ""})
                 end
             else
                 Ln = e[4] + Scy - 2

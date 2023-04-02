@@ -11,8 +11,9 @@ else
         return str:sub(1,len) .. pad:rep(len - #str)
     end
     PhileOS.setName(PhileOS.ID, "Enter Password")
-    
-    local user = ""
+
+    local loggedIn = PhileOS.getUsername()
+    local user = loggedIn
     local pass = ""
     local sel = nil
     local selY = 0
@@ -20,10 +21,15 @@ else
     local curpos = 0
     local passwords = 0
 
+    local NoPass = false
+
     if not fs.exists("/PhileOS/.pass.set") then 
         term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
         term.clear()
-        return
+        local pwf = fs.open("/PhileOS/.pass.set", "w")
+        pwf.write("{}")
+        pwf.close()
+        NoPass = true
     else
         local pwf = fs.open("/PhileOS/.pass.set", "r")
         passwords = pwf.readAll()
@@ -32,7 +38,7 @@ else
         if passwords == nil then
             term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
             term.clear()
-            return
+            NoPass = true
         end
 
         local noUsers = true
@@ -43,9 +49,25 @@ else
         if noUsers then
             term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
             term.clear()
-
-            return
+            NoPass = true
         end
+    end
+    if NoPass then
+        PhileOS.setStatus(PhileOS.ID, "Admin;Default")
+        local user = "Default"
+        if not fs.exists("PhileOS/Users/"..user) then 
+            fs.makeDir("PhileOS/Users/"..user)
+            fs.makeDir("PhileOS/Users/"..user.."/Documents")
+        end
+        if not fs.exists("PhileOS/Users/"..user.."/user.set") then
+            local usrSet = {}
+            usrSet.theme = PhileOS.getCategory("theme")
+            usrSet.time = PhileOS.getCategory("time")
+            local fh = fs.open("PhileOS/Users/"..user.."/user.set", "w")
+            fh.write(textutils.serialise(usrSet))
+            fh.close()
+        end
+        return
     end
     local on = false
     local idleTime = 0
@@ -140,14 +162,14 @@ else
             if idleTime >= 30 then
                 on = false
                 sel = nil
-                user = ""
+                user = loggedIn
                 pass = ""
             end
         else
             idleTime = 0
         end
         if e[1] == "mouse_click" and on then
-            if logowidth == 8 and e[3] >= math.ceil(Sx / 2) - 10  and e[3] <= math.ceil(Sx / 2) + 10 and e[4] == logowidth + 3 then
+            if logowidth == 8 and e[3] >= math.ceil(Sx / 2) - 10  and e[3] <= math.ceil(Sx / 2) + 10 and e[4] == logowidth + 3 and loggedIn == "" then
                 sel = "user"
                 curpos = #user + 1
                 selX = math.ceil(Sx / 2) - 10
@@ -157,7 +179,7 @@ else
                 curpos = #pass + 1
                 selX = math.ceil(Sx / 2) - 10
                 selY = logowidth + 8
-            elseif logowidth == 4 and e[3] >= math.ceil(Sx / 2) - 13 and e[3] <= math.ceil(Sx / 2) - 1 and e[4] == logowidth + 3 then
+            elseif logowidth == 4 and e[3] >= math.ceil(Sx / 2) - 13 and e[3] <= math.ceil(Sx / 2) - 1 and e[4] == logowidth + 3 and loggedIn == "" then
                 sel = "user"
                 curpos = #user + 1
                 selX = math.ceil(Sx / 2) - 13
@@ -174,6 +196,19 @@ else
                     local passHash = sha256.pbkdf2(pass, tbl.salt, tbl.iter)
                     local passHex = passHash:toHex()
                     if passHex == tbl.hash then
+                        PhileOS.setStatus(PhileOS.ID, tbl.type..";"..user)
+                        if not fs.exists("PhileOS/Users/"..user) then 
+                            fs.makeDir("PhileOS/Users/"..user)
+                            fs.makeDir("PhileOS/Users/"..user.."/Documents")
+                        end
+                        if not fs.exists("PhileOS/Users/"..user.."/user.set") then
+                            local usrSet = {}
+                            usrSet.theme = PhileOS.getCategory("theme")
+                            usrSet.time = PhileOS.getCategory("time")
+                            local fh = fs.open("PhileOS/Users/"..user.."/user.set", "w")
+                            fh.write(textutils.serialise(usrSet))
+                            fh.close()
+                        end
                         return
                     else
                         PhileOS.openDialog(PhileOS.ID, "button", {"Incorrect Password", "Ok", "", "", ""})
@@ -181,7 +216,7 @@ else
                 else
                     PhileOS.openDialog(PhileOS.ID, "button", {"Incorrect Username", "Ok", "", "", ""})
                 end
-                user = ""
+                user = loggedIn
                 pass = ""
             else
                 sel = nil

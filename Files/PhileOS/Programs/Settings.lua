@@ -8,7 +8,7 @@ function randomString(length, Si, Ei)
       ret = ret..string.char(math.random(Si, Ei))
     end
     return ret
-  end
+end
 
 local function cut(str,len,pad)
     pad = pad or " "
@@ -22,12 +22,12 @@ end
 term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
 term.clear()
 
-local isSP = PhileOS.askForSP(PhileOS.ID)
+--local isSP = PhileOS.askForSP(PhileOS.ID)
 
-if not isSP then
-    PhileOS.openDialog(PhileOS.ID, "button", {"SP Permissions are\nrequired for this app to\nwork.", "Ok", "", "", ""})
-    return
-end
+--if not isSP then
+--    PhileOS.openDialog(PhileOS.ID, "button", {"SP Permissions are\nrequired for this app to\nwork.", "Ok", "", "", ""})
+--    return
+--end
 
 local coltable = {
     {colours.red, colours.orange, colours.yellow, colours.lime},
@@ -44,6 +44,8 @@ local comptable = {
 }
 
 local option = "backgroundColour"
+local usertype = ""
+local protectedMeuns = {Logins = true}
 
 while true do
     term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
@@ -101,9 +103,14 @@ while true do
         term.setCursorPos(2, 3)
         term.blit("\149"..cut(option, 19).."\31".."\149", bgc..tc:rep(20)..winc, winc..bgc:rep(21))
         term.setCursorPos(2, 4)
-        term.blit("\130"..("\131"):rep(20).."\129", winc:rep(22), bgc:rep(22))
+        term.blit("\130"..("\131"):rep(20).."\129", winc:rep(22), bgc:rep(22))        
 
         if option ~= "" then
+            term.setCursorPos(7, 5)
+            term.setBackgroundColour(PhileOS.getSetting("theme", "defBackgroundColour"))
+            term.setTextColour(PhileOS.getSetting("theme", "defTextColour"))
+            term.write(usertype.." Account")
+
             term.setCursorPos(Sx - 17, 2)
             term.blit(("\143"):rep(16), bgc:rep(16), ("1"):rep(16))
             term.setCursorPos(Sx - 17, 3)
@@ -126,9 +133,13 @@ while true do
     elseif e[1] == "mouse_click" and e[2] == 1 then
         if e[3] <= #menu + 1 and e[4] == 1 then
             local choice = PhileOS.openRClick(PhileOS.ID, 1, 2, {"Theme", "Logins"})
-            if choice ~= nil then menu = choice end
-            if choice == "Theme" then option = "backgroundColour" end
-            if choice == "Logins" then option = "" end
+            if protectedMeuns[choice] and PhileOS.getUserType() == "User" then
+                PhileOS.openDialog(PhileOS.ID, "button", {"Access to that menu\nrequires an admin\naccount.", "Ok", "", "", ""})
+            else
+                if choice ~= nil then menu = choice end
+                if choice == "Theme" then option = "backgroundColour" end
+                if choice == "Logins" then option = "" end
+            end
         else
             if menu == "Theme" then
                 if e[3] >= 3 and e[3] <= 23 and e[4] == 3 then
@@ -180,44 +191,51 @@ while true do
                     end
                     local userNames = {}
                     for i, v in pairs(passwords) do
-                        if #tostring(i) > 1 then
-                            table.insert(userNames, i)
-                        end
+                        table.insert(userNames, i)
                     end
                     table.insert(userNames, "")
                     table.insert(userNames, "Add User...")
                     local choice = PhileOS.openRClick(PhileOS.ID, 2, 4, userNames, true)
                     if choice == "Add User..." then
-                        local user = PhileOS.openDialog(PhileOS.ID, "textInput", {"Enter Username", ""})
-                        if user == "Add User..." then
-                            PhileOS.openDialog(PhileOS.ID, "button", {"Thought this would break something?", "Ok", "", "", ""})
-                        elseif passwords[user] then
-                            PhileOS.openDialog(PhileOS.ID, "button", {"That username already exists!", "Ok", "", "", ""})
-                        elseif user ~= nil then
-                            local pass1 = PhileOS.openDialog(PhileOS.ID, "textInput", {"Enter Password", "", "*"})
-                            if pass1 ~= nil then
-                                local pass2 = PhileOS.openDialog(PhileOS.ID, "textInput", {"Re Enter Password", "", "*"})
-                                if pass2 ~= nil then
-                                    if pass1 ~= pass2 then
-                                        PhileOS.openDialog(PhileOS.ID, "button", {"Passwords dont match!", "Ok", "", "", ""})
-                                    else
-                                        passwords[user] = {}
-                                        local salt = randomString(32, 48, 127)
-                                        local passHash = sha256.pbkdf2(pass1, salt, 100)
-                                        local passHex = passHash:toHex()
-                                        passwords[user].hash = passHex 
-                                        passwords[user].salt = salt
-                                        passwords[user].iter = 100
-                                        local pwf = fs.open("/PhileOS/.pass.set", "w")
-                                        pwf.write(textutils.serialise(passwords))
-                                        pwf.close()
-                                        option = user
+                        local isAdmin = "Admin"
+                        if #userNames > 2 then
+                            isAdmin = PhileOS.openDialog(PhileOS.ID, "button", {"Do you want this account to be a user or an \nadmin?", "User", "Admin", "", ""})
+                        end
+                        if isAdmin ~= nil then
+                            local user = PhileOS.openDialog(PhileOS.ID, "textInput", {"Enter Username", ""})
+                            if user == "Add User..." then
+                                PhileOS.openDialog(PhileOS.ID, "button", {"Thought this would break something?", "Ok", "", "", ""})
+                            elseif passwords[user] then
+                                PhileOS.openDialog(PhileOS.ID, "button", {"That username already exists!", "Ok", "", "", ""})
+                            elseif user ~= nil then
+                                local pass1 = PhileOS.openDialog(PhileOS.ID, "textInput", {"Enter Password", "", "*"})
+                                if pass1 ~= nil then
+                                    local pass2 = PhileOS.openDialog(PhileOS.ID, "textInput", {"Re Enter Password", "", "*"})
+                                    if pass2 ~= nil then
+                                        if pass1 ~= pass2 then
+                                            PhileOS.openDialog(PhileOS.ID, "button", {"Passwords dont match!", "Ok", "", "", ""})
+                                        else
+                                            passwords[user] = {}
+                                            local salt = randomString(32, 48, 127)
+                                            local passHash = sha256.pbkdf2(pass1, salt, 100)
+                                            local passHex = passHash:toHex()
+                                            passwords[user].hash = passHex 
+                                            passwords[user].salt = salt
+                                            passwords[user].iter = 100
+                                            passwords[user].type = isAdmin
+                                            local pwf = fs.open("/PhileOS/.pass.set", "w")
+                                            pwf.write(textutils.serialise(passwords))
+                                            pwf.close()
+                                            option = user
+                                            usertype = passwords[user].type
+                                        end
                                     end
                                 end
                             end
                         end
                     elseif choice ~= nil then
                         option = choice
+                        usertype = passwords[option].type
                     end
                 elseif option ~= "" and e[3] >= Sx - 17 and e[3] <= Sx - 1 and e[4] >= 2 and e[4] <= 4 then
                     local pass1 = PhileOS.openDialog(PhileOS.ID, "textInput", {"Enter New Password", "", "*"})
@@ -241,13 +259,17 @@ while true do
                         end
                     end
                 elseif option ~= "" and e[3] >= Sx - 17 and e[3] <= Sx - 1 and e[4] >= 5 and e[4] <= 7 then
-                    local ans = PhileOS.openDialog(PhileOS.ID, "button", {"Are you sure you want to delete this account?", "Yes", "No", "", ""})
-                    if ans == "Yes" then
-                        passwords[option] = nil
-                        local pwf = fs.open("/PhileOS/.pass.set", "w")
-                        pwf.write(textutils.serialise(passwords))
-                        pwf.close()
-                        option = ""
+                    if PhileOS.getUsername() == option then
+                        PhileOS.openDialog(PhileOS.ID, "button", {"You can't delete this\naccount because you're\non it right now.", "Ok", "", "", ""})
+                    else
+                        local ans = PhileOS.openDialog(PhileOS.ID, "button", {"Are you sure you want to delete this account?", "Yes", "No", "", ""})
+                        if ans == "Yes" then
+                            passwords[option] = nil
+                            local pwf = fs.open("/PhileOS/.pass.set", "w")
+                            pwf.write(textutils.serialise(passwords))
+                            pwf.close()
+                            option = ""
+                        end
                     end
                 end
             end

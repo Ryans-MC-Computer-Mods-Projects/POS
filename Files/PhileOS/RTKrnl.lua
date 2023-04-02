@@ -40,8 +40,12 @@ local locked = {}
 local coroutineOrder = {}
 local services = {}
 local serviceArguments = {}
+local userSettingCategories = {}
+--Other important variables
 local taskbarTask = 0
 local desktopTask = 0
+local username = ""
+local userType = "No Users"
 
 --Terminals
 local buffer = window.create(OGTerm, 1, 1, 1, 1, false) --Buffer terminal to return to after coroutines
@@ -87,13 +91,106 @@ local BlitToNum = {
   e = 16384,
   f = 32768,
 }
+--Trusted Applcations
+local trustedApps = {
+	"PhileOS/explorer.lua",
+	"PhileOS/Programs/Settings.lua",
+	"startup.lua",
+}
+
+--Protected Loacations
+local protected = {
+	"startup.lua",
+	"PhileOS"
+}
+--Exceptions within protected Loacations
+local exceptions = {
+	"PhileOS/Users/%USER%/Documents/"
+}
+
 
 local isLocked = false
+local isFirst = true
 
 ----Functions
+local addProcess = 0
+
+local isProtected = function(file)
+	while file:sub(1, 1) == "/" do file = file:sub(2) end
+	while file:sub(-1) == "/" do file = file:sub(1, -2) end
+	local isProc = false
+	for i, v in pairs(protected) do
+		if file:sub(1, #v) == v then
+			isProc = true
+			break
+		end
+	end
+	if isProc then
+		for i, v in pairs(exceptions) do
+			while v:find("%%USER%%") do
+				local sindex, eindex = v:find("%%USER%%")
+				v = v:sub(1, sindex - 1)..username..v:sub(eindex + 1)
+			end
+			if file:sub(1, #v) == v then
+				isProc = false
+				break
+			end
+		end
+	end
+	return isProc
+end
+
+local function checkForSP(ID, reason)
+	if processes[ID].SP then return true end
+	local Tx, Ty = buffer.getSize()
+	local PID = -10
+	PID = addProcress("/PhileOS/SysPrograms/Dialogs/Button.lua", false, math.floor(Tx / 2) - 15, math.floor(Ty / 2) - 4, 30, 20, true, false, "Do you want to give\n"..processes[ID].name:sub(1, 24).."\nSP permissions to \n"..reason.."?", "Yes", "No", "Only once", "")
+	if PID ~= -10 then
+		local moveon = false
+		while not moveon do
+			if not processes[PID] then
+				return nil
+			end
+			if processes[PID].status ~= "" then moveon = true end
+			if renderOrder[#renderOrder] == ID then
+				for i, v in pairs(renderOrder) do
+					if v == PID then
+						table.remove(renderOrder, i)
+						table.insert(renderOrder, v)
+					end
+				end
+			end
+			coroutine.yield()
+		end
+		local status = processes[PID].status
+		for i, v in pairs(coroutineOrder) do
+			if v == PID then
+				table.remove(coroutineOrder, i)
+				break
+			end
+		end
+		if not processes[PID].isBG then
+			for i, v in pairs(renderOrder) do
+				if v == PID then
+					table.remove(renderOrder, i)
+					break
+				end
+			end
+		end
+		processes[PID] = nil
+		if status == "Yes" then
+			processes[ID].SP = true
+			return true
+		elseif status == "Only once" then
+			return true
+		end
+		return false
+	end
+	return false
+end
 
 --addProcress: Adds a process to the processes list and creates a window if needed
-local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
+addProcress = function(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 	local newProcess = {}
 	local processID = nil
 	while processID == nil do
@@ -104,11 +201,129 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 	for i, v in pairs(os) do
 		modOS[i] = v
 	end
+	modOS.version = function() return "PhileOS 0.1.0" end
+	local env2 = nil
+	modOS.run = function(env, ...)
+		local envTU = {}
+		for i, v in pairs(env2) do
+			envTU[i] = v
+		end
+		for i, v in pairs(env) do
+			if not envTU[i] then
+				envTU[i] = v
+			end
+		end
+		return os.run(envTU, ...)
+	end
 	if Program ~= "startup.lua" and Program ~= "/startup.lua" then
 		modOS.pullEventRaw = os.pullEvent
 	end
+	local modShell = {}
+	for i, v in pairs(shell) do
+		modShell[i] = v
+	end
+	modShell.execute = function(...)
+		return os.run(env2, ...)
+	end
+	modShell.openTab = function() error("Multishell is disabled on PhileOS") end
+	modShell.run = function(...)
+		local sLine = table.concat({ ... }, " ")
+    	local tWords = {}
+    	local bQuoted = false
+    	for match in string.gmatch(sLine .. "\"", "(.-)\"") do
+    	    if bQuoted then
+    	        table.insert(tWords, match)
+    	    else
+    	        for m in string.gmatch(match, "[^ \t]+") do
+    	            table.insert(tWords, m)
+    	        end
+    	    end
+    	    bQuoted = not bQuoted
+    	end
+      	local sCommand = tWords[1]
+   	 	if sCommand then
+        	return modShell.execute(sCommand, table.unpack(tWords, 2))
+    	end
+    	return false
+	end
+	modShell.getRunningProgram = function() return Program end
+	local modFS = {}
+	for i, v in pairs(fs) do
+		modFS[i] = v
+	end
+	modFS.makeDir = function(path)
+		if isProtected(path) then
+			if not checkForSP(processID, "access protected files") then
+				error("Tried to access procted location")
+			end
+		end
+		return fs.makeDir(path)
+	end
+	modFS.move = function(path1, path2)
+		if isProtected(path1) or isProtected(path2) then
+			if not checkForSP(processID, "access protected files") then
+				error("Tried to access procted location")
+			end
+		end
+		return fs.move(path1, path2)
+	end
+	modFS.copy = function(path1, path2)
+		if isProtected(path1) or isProtected(path2) then
+			if not checkForSP(processID, "access protected files") then
+				error("Tried to access procted location")
+			end
+		end
+		return fs.copy(path1, path2)
+	end
+	modFS.open = function(path, mode)
+		if isProtected(path) and not (mode == "r" or mode == "rb") then
+			if not checkForSP(processID, "access protected files") then
+				error("Tried to access procted location")
+			end
+		end
+		return fs.open(path, mode)
+	end
+	modFS.delete = function(path)
+		if isProtected(path) then
+			if not checkForSP(processID, "access protected files") then
+				error("Tried to access procted location")
+			end
+		end
+		return fs.delete(path)
+	end
 	local env = setmetatable({
+	  multishell = {
+		  getCount = function() end,
+		  getCurrent = function() end,
+		  getFocus = function() end,
+		  getTitle = function() end,
+		  launch = function() error("Multishell is disabled on PhileOS") end,
+		  setFocus = function() end,
+		  setTitle = function() end,
+	  },
+	  _ENV = env2,
+	  loadstring = function(...)
+		local f = loadstring(...)
+		if f == nil then return nil end
+		setfenv(f, env2)
+		return f
+	  end,
+	  loadfile = function(...)
+		local f = loadfile(...)
+		if f == nil then return nil end
+		setfenv(f, env2)
+		return f
+	  end,
+	  load = function(...)
+		local f = load(...)
+		if f == nil then return nil end
+		setfenv(f, env2)
+		return f
+	  end,
+	  ["_echo"] = function(...) return ... end,
 	  PhileOS = {
+		Version = 0001000002,
+		VersionString = "0.1.0 | Build 0002",
 		RootProgram = Program,
 	    openProgram = function(name, X, Y, Sx, Sy, ...)
 			local six, siy = buffer.getSize()
@@ -134,7 +349,7 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 			return false
 	    end,
 		getIsLocked = function()
-			return isLocked
+			return isLocked or isFirst
 		end,
 		setClipboard = function(CB)
 			clipboard = CB
@@ -179,13 +394,15 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 				if Sx > Tx - 20 then Sx = Tx - 20 end
 				local Sy = 19
 				if Sy > Ty - 10 then Sy = Ty - 10 end
-				PID = addProcress("/PhileOS/explorer.lua", false, math.ceil(Tx / 2) - 15, math.ceil(Ty / 2) - 4, Sx, Sy, true, true, options[1], "open")
+				options[2] = "open"
+				PID = addProcress("/PhileOS/explorer.lua", false, math.ceil(Tx / 2) - 15, math.ceil(Ty / 2) - 4, Sx, Sy, true, true, options)
 			elseif style == "saveFile" then
 				local Sx = 51
 				if Sx > Tx - 20 then Sx = Tx - 20 end
 				local Sy = 19
 				if Sy > Ty - 10 then Sy = Ty - 10 end
-				PID = addProcress("/PhileOS/explorer.lua", false, math.ceil(Tx / 2) - 15, math.ceil(Ty / 2) - 4, Sx, Sy, true, true, options[1], "save")
+				options[2] = "save"
+				PID = addProcress("/PhileOS/explorer.lua", false, math.ceil(Tx / 2) - 15, math.ceil(Ty / 2) - 4, Sx, Sy, true, true, options)
 			end
 			if PID ~= -10 then
 				local moveon = false
@@ -224,17 +441,21 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 			end
 		end,
 		openRClick = function(ID, Xw, Yw, options, varWidth)
-			table.insert(options, 1, ID)
+			local noptions = {}
+			for i, v in pairs(options) do
+				noptions[i] = v
+			end
+			table.insert(noptions, 1, ID)
 			local Wx, Wy = processes[ID].win.getPosition()
 			local Tx, Ty = buffer.getSize()
 			local X = Wx + Xw - 1
 			if X > Tx - 29 then X = Tx - 29 end
 			local Y = Wy + Yw - 1
-			if Y > Ty - (#options + 2) + 1 then Y = Ty - (#options + 2) + 1 end
+			if Y > Ty - (#noptions + 2) + 1 then Y = Ty - (#noptions + 2) + 1 end
 			local Xs = 30
 			if varWidth then
 				Xs = 2
-				for i, v in pairs(options) do
+				for i, v in pairs(noptions) do
 					if i ~= 1 then
 						if #tostring(v) + 2 > Xs then
 							Xs = #tostring(v) + 2
@@ -243,7 +464,7 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 				end
 			end
 			coroutine.yield()
-			local PID = addProcress("/PhileOS/SysPrograms/Dialogs/rClick.lua", false, X, Y, Xs, #options + 1, false, true, table.unpack(options))
+			local PID = addProcress("/PhileOS/SysPrograms/Dialogs/rClick.lua", false, X, Y, Xs, #noptions + 1, false, true, table.unpack(noptions))
 			local moveon = false
 			local rn = false
 			while not moveon do
@@ -342,12 +563,26 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 		end,
 		setSetting = function(IDtC, category, setting, value)
 			if processes[IDtC] then
-				if processes[IDtC].SP then
+				if checkForSP(IDtC, "modify settings") then
 					if settings[category][setting] ~= nil then
 						settings[category][setting] = value
-						setfile = fs.open("/PhileOS/Settings/main.set", "w")
-						setfile.write(textutils.serialise(settings))
-						setfile.close()
+						if userSettingCategories[category] then
+							local setfile = fs.open("PhileOS/Users/"..username.."/user.set", "r")
+							local set = textutils.unserialise(setfile.readAll())
+							setfile.close()
+							set[category] = settings[category]
+							setfile = fs.open("PhileOS/Users/"..username.."/user.set", "w")
+							setfile.write(textutils.serialise(set))
+							setfile.close()
+						else
+							local setfile = fs.open("/PhileOS/Settings/main.set", "r")
+							local set = textutils.unserialise(setfile.readAll())
+							setfile.close()
+							set[category] = settings[category]
+							setfile = fs.open("/PhileOS/Settings/main.set", "w")
+							setfile.write(textutils.serialise(set))
+							setfile.close()
+						end
 						return true, true
 					end
 					return true, false
@@ -538,13 +773,15 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 			end
 		end,
 		GetExt = function(file)
+			local fullFile = file
+			local file = fs.getName(file)
 			local dot = string.find(string.reverse(file), "%.")
             local ext = "File"
             if dot then
                 dot = #file - dot + 1
                 ext = string.sub(file, dot + 1)
             end
-			if fs.isDir(file) then ext = "Folder" end
+			if fs.isDir(fullFile) then ext = "Folder" end
 			return ext
 		end,
 		HostService = function(ID, service)
@@ -608,10 +845,23 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 		ReturnRequest = function(ID, ...)
 			serviceArguments[ID] = {true, ...}
 		end,
+		getUserType = function()
+			return userType
+		end,
+		getUsername = function()
+			return username
+		end,
+		isProtected = function(file)
+			return isProtected(file)
+		end,
 		ID = processID
 	  },
 	  os = modOS,
+	  shell = modShell,
+	  fs = modFS,
 	}, {__index = _ENV})
+	--env.multishell = nil
+	env2 = env
 	local fn, err = loadfile(Program, nil, env)
 	newProcess.cor = coroutine.create(function(...) 
 		if not fn then printError(err) while true do coroutine.yield() end end
@@ -628,6 +878,19 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 			while i <= #locked do
 				table.insert(renderOrder, #renderOrder, locked[i])
 				table.remove(locked, i)
+			end
+			local semi = string.find(newProcess.status, ";")
+			if semi then
+				userType = newProcess.status:sub(1, semi - 1)
+				username = newProcess.status:sub(semi + 1)
+			end
+			fh = fs.open("PhileOS/Users/"..username.."/user.set", "r")
+			local userSettings = textutils.unserialise(fh.readAll())
+			fh.close()
+			userSettingCategories = {}
+			for i, v in pairs(userSettings) do
+				settings[i] = v
+				userSettingCategories[i] = true
 			end
 		end
 	end)
@@ -657,6 +920,12 @@ local function addProcress(Program, isBG, X, Y, Sx, Sy, hasWinDecor, SP, ...)
 	newProcess.mini = false
 	newProcess.maxi = false
 	newProcess.SP = SP
+	for i, v in pairs(trustedApps) do
+		if Program == v or Program == "/"..v then
+			newProcess.SP = true
+			break
+		end
+	end
 	newProcess.CR = true
 	newProcess.status = ""
 	if not isBG then
@@ -1136,6 +1405,7 @@ local function render()
 	term.setTextColour(NTc)
 	term.setCursorPos(NCx, NCy)
 	term.setCursorBlink(NCB)
+	isFirst = false
 end
 
 local Tx, Ty = OGTerm.getSize()

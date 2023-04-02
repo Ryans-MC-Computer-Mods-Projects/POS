@@ -1,7 +1,11 @@
 local function cut(str,len,pad)
     pad = pad or " "
-    return str:sub(1,len) .. pad:rep(len - #str)
-end
+    if len > #str then
+      return str:sub(1,len) .. pad:rep(len - #str)
+    else
+        return str:sub(1,len)
+    end
+  end
 
 local pUtils = require("PhileUtils")
 
@@ -35,13 +39,18 @@ explorfs.isReadOnly = function(path)
     if path:sub(1, 5) == "Trash" then
         return false
     else
-        return fs.isReadOnly(path)
+        return fs.isReadOnly(path) or PhileOS.isProtected(path)
     end
 end
 
 local Tx, Ty = term.getSize()
 local sel = -10
 local args = {...}
+if args[1] then
+    if type(args[1]) == "table" then
+        args = args[1]
+    end
+end
 if args[1] == "Trash" then
     PhileOS.setName(PhileOS.ID, "Trash")
 end
@@ -245,18 +254,18 @@ while true do
     elseif e[1] == "mouse_click" and e[2] == 2 then
         if e[4] > 3 then
             local option = nil
-            if e[4] - 3 + scroll > #files and fs.isReadOnly(dir) then
+            if e[4] - 3 + scroll > #files and explorfs.isReadOnly(dir) and explorfs.isReadOnly(dir.."lol") then
             elseif dir == "Trash" and e[4] - 3 + scroll > #files then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Empty Trash"})
             elseif dir == "Trash" then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Recover", "Delete", "", "Empty Trash"})
             elseif e[4] - 3 + scroll > #files then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"New Folder", "New File", "Paste"})
-            elseif fs.isReadOnly(dir..files[e[4] - 3 + scroll]) and fs.isDir(dir..files[e[4] - 3 + scroll]) then
+            elseif explorfs.isReadOnly(dir..files[e[4] - 3 + scroll]) and fs.isDir(dir..files[e[4] - 3 + scroll]) then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Open", "Open in new Window", "", "Pin to Desktop", "", "Copy" })
-            elseif fs.isReadOnly(dir..files[e[4] - 3 + scroll]) then
+            elseif explorfs.isReadOnly(dir..files[e[4] - 3 + scroll]) then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Open", "Open With", "Run", "", "Pin to Desktop", "Pin to Start", "", "Copy"})
-            elseif fs.isDir(dir..files[e[4] - 3 + scroll]) then
+            elseif explorfs.isDir(dir..files[e[4] - 3 + scroll]) then
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Open", "Open in new Window", "", "Pin to Desktop", "", "Copy", "Cut", "", "Rename", "Delete", "", "New Folder", "New File", "Paste"})
             else
                 option = PhileOS.openRClick(PhileOS.ID, e[3], e[4], {"Open", "Open With", "Run", "", "Pin to Desktop", "Pin to Start", "", "Copy", "Cut", "", "Rename", "Delete", "", "New Folder", "New File", "Paste"})
@@ -450,7 +459,13 @@ while true do
 				file.write(textutils.serialise(pins))
 				file.close()
             elseif option == "Pin to Desktop" then
-                local file = fs.open("/PhileOS/Settings/desktop.set", "r")
+                local user = PhileOS.getUsername()
+                local file = 0
+                if user == "" then
+                    file = fs.open("/PhileOS/Settings/desktop.set", "r")
+                else
+                    file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "r")
+                end
 				local pins = textutils.unserialise(file.readAll())
 				file.close()
                 local name = fs.getName(dir..files[e[4] - 3 + scroll])
@@ -463,7 +478,12 @@ while true do
                 else
                     table.insert(pins[1], {name, dir..files[e[4] - 3 + scroll]})
                 end
-                local file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                local file = 0
+                if user == "" then
+                    file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                else
+                    file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "w")
+                end
 				file.write(textutils.serialise(pins))
 				file.close()
             end

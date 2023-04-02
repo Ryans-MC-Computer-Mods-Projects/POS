@@ -4,6 +4,7 @@
   "/PhileOS/APIs/PhileUtils.lua",
   "/PhileOS/APIs/pxl.lua",
   "/PhileOS/APIs/sha256.lua",
+  "/PhileOS/Changelog.txt",
   "/PhileOS/Icons/Colours.txt",
   "/PhileOS/Icons/Default.phico",
   "/PhileOS/Icons/Extentions/Folder.phico",

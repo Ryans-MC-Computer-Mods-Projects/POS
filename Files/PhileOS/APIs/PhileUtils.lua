@@ -89,4 +89,41 @@ utils.renderPhimg = function(file, size, x, y, bgcol)
     pxl.draw(x, y)
 end
 
+utils.text = {}
+
+utils.text.writeTextWrapped = function(text, width, indexToCheck)
+    local Sx, Sy = term.getCursorPos()
+    local x = 1
+    local y = 1
+    local retX = 0
+    local retY = 0
+    for i = 1, #text do
+      term.setCursorPos(Sx + x - 1, Sy + y - 1)
+      term.write(text:sub(i, i))
+      if i == indexToCheck then
+        retX = x
+        retY = y
+      end
+      if text:sub(i, i) == " " then
+        local ns = string.find(text:sub(i + 1), " ") or #text - i
+        if x + ns > width then
+          x = 1
+          y = y + 1
+        else
+          x = x + 1
+        end
+      elseif x == width or text:sub(i, i) == "\n" then
+        x = 1
+        y = y + 1
+      else
+        x = x + 1
+      end
+    end
+    if indexToCheck == #text + 1 then
+      return x, y
+    elseif retX > 0 then
+      return retX, retY
+    end
+end
+
 return utils

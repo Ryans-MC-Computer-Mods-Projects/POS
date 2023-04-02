@@ -3,7 +3,11 @@ local pUtils = require("PhileUtils")
 local function cut(str,len,pad, ddd)
     pad = pad or " "
     if #str > len and ddd then str = str:sub(1, len - 3).."..." end
-    return pad:rep(math.ceil((len - #str) / 2)) .. str:sub(1,len) .. pad:rep(math.floor((len - #str) / 2))
+    if len > #str then
+        return pad:rep(math.ceil((len - #str) / 2)) .. str:sub(1,len) .. pad:rep(math.floor((len - #str) / 2))
+    else
+        return str:sub(1,len)
+    end
 end
 local xs = 0
 local ys = 0
@@ -13,7 +17,6 @@ local mx = 0
 local my = 0
 local mb = 0
 local time = os.clock()
-local firstRender = true
 
 while true do
     local Sx, Sy = term.getSize()
@@ -21,11 +24,22 @@ while true do
     local txc = PhileOS.getSetting("theme", "desktopTextColour")
     term.setBackgroundColour(bgc)
     term.clear()
-
-    local file = fs.open("/PhileOS/Settings/desktop.set", "r")
+    local file = 0
+    local user = PhileOS.getUsername()
+    if user == "" then
+        file = fs.open("/PhileOS/Settings/desktop.set", "r")
+    else
+        if not fs.exists("/PhileOS/Users/"..user.."/desktop.set") then
+            local masterfh = fs.open("/PhileOS/Settings/desktop.set", "r")
+            local userfh = fs.open("/PhileOS/Users/"..user.."/desktop.set", "w")
+            userfh.write(masterfh.readAll())
+            masterfh.close()
+            userfh.close()
+        end
+        file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "r")
+    end
 	local pins = textutils.unserialise(file.readAll())
-    if PhileOS.getIsLocked() or firstRender then pins = {} end
-    if PhileOS.getIsLocked() then firstRender = false end
+    if PhileOS.getIsLocked() then pins = {} end
     file.close()
 
     for y, t in pairs(pins) do
@@ -85,11 +99,12 @@ while true do
     term.setBackgroundColour(bgc)
     term.setTextColour(txc)
     term.setCursorPos(Sx - 25, Sy - 1)
-    term.write("PhileOS 0.1.0 | Build 0001")
+    term.write("PhileOS "..PhileOS.VersionString)
     term.setCursorPos(Sx - 25, Sy)
     term.write("THIS IS A WORK IN PROGRESS")
 
     local e = table.pack(os.pullEvent())
+    first = false
     if e[1] == "timer" then
         firstRender = false
     elseif e[1] == "mouse_click" and not PhileOS.getIsLocked() then
@@ -113,14 +128,24 @@ while true do
             if option == "Rename Icon" then
                 local name = PhileOS.openDialog(PhileOS.ID, "textInput", {"New Name for "..pins[YT][XT][1], pins[YT][XT][1]})
                 pins[YT][XT][1] = name
-                local file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                local file = 0
+                if user == "" then
+                    file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                else
+                    file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "w")
+                end
                 file.write(textutils.serialise(pins))
                 file.close()
             elseif option == "Delete Icon" then
                 local delete = PhileOS.openDialog(PhileOS.ID, "button", {"Are you sure you want to delete "..pins[YT][XT][1].."?", "Yes", "No", "", ""})
                 if delete == "Yes" then
                     pins[YT][XT] = nil
-                    local file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                    local file = 0
+                    if user == "" then
+                        file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                    else
+                        file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "w")
+                    end
                     file.write(textutils.serialise(pins))
                     file.close()
                 end
@@ -180,7 +205,12 @@ while true do
                         save = true
                     end
                     if save then
-                        local file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                        local file = 0
+                        if user == "" then
+                            file = fs.open("/PhileOS/Settings/desktop.set", "w")
+                        else
+                            file = fs.open("/PhileOS/Users/"..user.."/desktop.set", "w")
+                        end
 	                    file.write(textutils.serialise(pins))
                         file.close()
                         xs = xst2

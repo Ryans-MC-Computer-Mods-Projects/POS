@@ -8,7 +8,7 @@ while true do
     term.setBackgroundColour(bgc)
     term.setTextColour(txc)
     term.setCursorPos(Sx - 25, Sy - 1)
-    term.write("PhileOS 0.1.0 | Build 0001")
+    term.write("PhileOS 0.1.0 | Build 0002")
     term.setCursorPos(Sx - 25, Sy)
     term.write("THIS IS A WORK IN PROGRESS")
 

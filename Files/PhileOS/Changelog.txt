@@ -1,0 +1,22 @@
+PhileOS Changelog:
+
+0.1.0 Build 0001 (February 5th 2022):
+ - Initial Release
+
+0.1.0 Build 0002 (April 2nd 2023):
+   I know it's been over a year, but I've finally released Build 2.
+   Hopefully more builds are coming soon!
+
+ - Fixed Bug that made file open/save dialogs only work on CraftOS-PC
+ - Fixed Issue with CraftOS-PC due to a bug in the emulator where string.rep() would error if given a negitive number
+ - Made it so programs run from shell would have the PhileOS API
+ - Prevented multishell from running when in PhileOS
+ - Accounts are now "Admin" or "User" accounts. (So that in the future, security stuff could be done)
+ - Each account now has it's own, separate desktop
+ - Each account now has separate theme and time settings
+ - Settings no longer prompts you for SP permissions
+ - You can now only log in to the account you were previously logged in to when you lock the computer
+ - Fixed bug where paint would change it's name to notepad when you resized it
+ - Added Paste Ability To Notepad
+ - Made it so that settings won't let you delete the account that you are currently on
+ - When no user accounts are set up, OS now boots into the "Default" account as an Admin account.
