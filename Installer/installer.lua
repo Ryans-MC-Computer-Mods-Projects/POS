@@ -188,29 +188,27 @@ while true do
             end
         end
     elseif screen == 4 then
-        --term.setBackgroundColour(1)
-        --term.setTextColour(32768)
-        --local textLen = middlePrint("Would you like to setup a user account?\nIf you don't, there will be\nno password protection.", 1)
-        --
-        --term.setCursorPos(math.ceil(Sx / 2) - 6, Sy - 2)
-        --term.blit(("\143"):rep(6).." "..("\143"):rep(6), ("0"):rep(13), ("5"):rep(6).."0"..("e"):rep(6))
-        --term.setCursorPos(math.ceil(Sx / 2) - 6, Sy - 1)
-        --term.blit(" Yeah   Nope ", ("f"):rep(13), "5555550eeeeee")
-        --term.setCursorPos(math.ceil(Sx / 2) - 6, Sy)
-        --term.blit(("\131"):rep(6).." "..("\131"):rep(6), "5555550eeeeee", ("0"):rep(13))
-        --
-        --e = table.pack(os.pullEventRaw())
-        --if e[1] == "mouse_click" then
-        --    if e[3] >= math.ceil(Sx / 2) - 6 and e[3] <= math.ceil(Sx / 2) - 1 and e[4] >= Sy - 2 then
-        --        screen = 5
-        --        varTable = {user = "", pass = "", pass2 = "", sel = nil, selX = 0, selY = 0}
-        --    elseif e[3] >= math.ceil(Sx / 2) + 1 and e[3] <= math.ceil(Sx / 2) + 6 and e[4] >= Sy - 2 then
-        --        screen = 6
-        --        varTable = {os.clock()}
-        --    end
-        --end
-        screen = 5
-        varTable = {user = "", pass = "", pass2 = "", sel = nil, selX = 0, selY = 0}
+        term.setBackgroundColour(1)
+        term.setTextColour(32768)
+        local textLen = middlePrint("Would you like to setup a user account?\nIf you don't, there will be\nno password protection.", 1)
+        
+        term.setCursorPos(math.ceil(Sx / 2) - 6, Sy - 2)
+        term.blit(("\143"):rep(6).." "..("\143"):rep(6), ("0"):rep(13), ("5"):rep(6).."0"..("e"):rep(6))
+        term.setCursorPos(math.ceil(Sx / 2) - 6, Sy - 1)
+        term.blit(" Yeah   Nope ", ("f"):rep(13), "5555550eeeeee")
+        term.setCursorPos(math.ceil(Sx / 2) - 6, Sy)
+        term.blit(("\131"):rep(6).." "..("\131"):rep(6), "5555550eeeeee", ("0"):rep(13))
+        
+        e = table.pack(os.pullEventRaw())
+        if e[1] == "mouse_click" then
+            if e[3] >= math.ceil(Sx / 2) - 6 and e[3] <= math.ceil(Sx / 2) - 1 and e[4] >= Sy - 2 then
+                screen = 5
+                varTable = {user = "", pass = "", pass2 = "", sel = nil, selX = 0, selY = 0}
+            elseif e[3] >= math.ceil(Sx / 2) + 1 and e[3] <= math.ceil(Sx / 2) + 6 and e[4] >= Sy - 2 then
+                screen = 6
+                varTable = {os.clock()}
+            end
+        end
     elseif screen == 5 then
         local winc = colours.toBlit(PhileOS.getSetting("theme", "windowColour"))
         local bgc = colours.toBlit(PhileOS.getSetting("theme", "defBackgroundColour"))
